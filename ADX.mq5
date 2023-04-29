@@ -1,20 +1,21 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                                          ADX.mq5 |
-//|                   Copyright 2009-2020, MetaQuotes Software Corp. |
+//|                   Copyright 2009-2017, MetaQuotes Software Corp. |
 //|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
-#property copyright   "2009-2020, MetaQuotes Software Corp."
+#property copyright   "2009-2017, MetaQuotes Software Corp."
 #property link        "http://www.mql5.com"
 #property description "Average Directional Movement Index"
 #include <MovingAverages.mqh>
 
 #property indicator_separate_window
-#property indicator_buffers 6
+//#property indicator_chart_window
+#property indicator_buffers 7
 #property indicator_plots   3
-#property indicator_type1   DRAW_LINE
-#property indicator_color1  LightSeaGreen
+#property indicator_type1   DRAW_COLOR_LINE
+#property indicator_color1  LightSeaGreen, clrBlue, clrLightBlue, clrRed, clrLightPink
 #property indicator_style1  STYLE_SOLID
-#property indicator_width1  1
+#property indicator_width1  2
 #property indicator_type2   DRAW_LINE
 #property indicator_color2  YellowGreen
 #property indicator_style2  STYLE_DOT
@@ -26,16 +27,19 @@
 #property indicator_label1  "ADX"
 #property indicator_label2  "+DI"
 #property indicator_label3  "-DI"
+
 //--- input parameters
-input int InpPeriodADX=14; // Period ADX
-//--- indicator buffers
+input int InpPeriodADX=14; // Period
+//---- buffers
 double    ExtADXBuffer[];
 double    ExtPDIBuffer[];
 double    ExtNDIBuffer[];
 double    ExtPDBuffer[];
 double    ExtNDBuffer[];
 double    ExtTmpBuffer[];
-
+//Color buffer
+double    ExtColorsBuffer[];
+//--- global variables
 int       ExtADXPeriod;
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -46,17 +50,18 @@ void OnInit()
    if(InpPeriodADX>=100 || InpPeriodADX<=0)
      {
       ExtADXPeriod=14;
-      PrintFormat("Incorrect value for input variable Period_ADX=%d. Indicator will use value=%d for calculations.",InpPeriodADX,ExtADXPeriod);
+      printf("Incorrect value for input variable Period_ADX=%d. Indicator will use value=%d for calculations.",InpPeriodADX,ExtADXPeriod);
      }
-   else
-      ExtADXPeriod=InpPeriodADX;
-//--- indicator buffers
-   SetIndexBuffer(0,ExtADXBuffer);
-   SetIndexBuffer(1,ExtPDIBuffer);
-   SetIndexBuffer(2,ExtNDIBuffer);
-   SetIndexBuffer(3,ExtPDBuffer,INDICATOR_CALCULATIONS);
-   SetIndexBuffer(4,ExtNDBuffer,INDICATOR_CALCULATIONS);
-   SetIndexBuffer(5,ExtTmpBuffer,INDICATOR_CALCULATIONS);
+   else ExtADXPeriod=InpPeriodADX;
+//---- indicator buffers
+SetIndexBuffer(0,ExtADXBuffer);
+SetIndexBuffer(1,ExtColorsBuffer,INDICATOR_COLOR_INDEX);
+SetIndexBuffer(2,ExtPDIBuffer);
+SetIndexBuffer(3,ExtNDIBuffer);   
+SetIndexBuffer(4,ExtPDBuffer,INDICATOR_CALCULATIONS);
+SetIndexBuffer(5,ExtNDBuffer,INDICATOR_CALCULATIONS);
+SetIndexBuffer(6,ExtTmpBuffer,INDICATOR_CALCULATIONS);
+
 //--- indicator digits
    IndicatorSetInteger(INDICATOR_DIGITS,2);
 //--- set draw begin
@@ -66,7 +71,9 @@ void OnInit()
 //--- indicator short name
    string short_name="ADX("+string(ExtADXPeriod)+")";
    IndicatorSetString(INDICATOR_SHORTNAME,short_name);
+//--- change 1-st index label
    PlotIndexSetString(0,PLOT_LABEL,short_name);
+//---- end of initialization function
   }
 //+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |
@@ -87,8 +94,7 @@ int OnCalculate(const int rates_total,
       return(0);
 //--- detect start position
    int start;
-   if(prev_calculated>1)
-      start=prev_calculated-1;
+   if(prev_calculated>1) start=prev_calculated-1;
    else
      {
       start=1;
@@ -97,39 +103,36 @@ int OnCalculate(const int rates_total,
       ExtADXBuffer[0]=0.0;
      }
 //--- main cycle
-   for(int i=start; i<rates_total && !IsStopped(); i++)
+   for(int i=start;i<rates_total && !IsStopped();i++)
      {
       //--- get some data
-      double high_price=high[i];
-      double prev_high =high[i-1];
-      double low_price =low[i];
-      double prev_low  =low[i-1];
-      double prev_close=close[i-1];
+      double Hi    =high[i];
+      double prevHi=high[i-1];
+      double Lo    =low[i];
+      double prevLo=low[i-1];
+      double prevCl=close[i-1];
       //--- fill main positive and main negative buffers
-      double tmp_pos=high_price-prev_high;
-      double tmp_neg=prev_low-low_price;
-      if(tmp_pos<0.0)
-         tmp_pos=0.0;
-      if(tmp_neg<0.0)
-         tmp_neg=0.0;
-      if(tmp_pos>tmp_neg)
-         tmp_neg=0.0;
+      double dTmpP=Hi-prevHi;
+      double dTmpN=prevLo-Lo;
+      if(dTmpP<0.0)   dTmpP=0.0;
+      if(dTmpN<0.0)   dTmpN=0.0;
+      if(dTmpP>dTmpN) dTmpN=0.0;
       else
         {
-         if(tmp_pos<tmp_neg)
-            tmp_pos=0.0;
+         if(dTmpP<dTmpN) dTmpP=0.0;
          else
            {
-            tmp_pos=0.0;
-            tmp_neg=0.0;
+            dTmpP=0.0;
+            dTmpN=0.0;
            }
         }
       //--- define TR
-      double tr=MathMax(MathMax(MathAbs(high_price-low_price),MathAbs(high_price-prev_close)),MathAbs(low_price-prev_close));
+      double tr=MathMax(MathMax(MathAbs(Hi-Lo),MathAbs(Hi-prevCl)),MathAbs(Lo-prevCl));
+      //---
       if(tr!=0.0)
         {
-         ExtPDBuffer[i]=100.0*tmp_pos/tr;
-         ExtNDBuffer[i]=100.0*tmp_neg/tr;
+         ExtPDBuffer[i]=100.0*dTmpP/tr;
+         ExtNDBuffer[i]=100.0*dTmpN/tr;
         }
       else
         {
@@ -140,16 +143,33 @@ int OnCalculate(const int rates_total,
       ExtPDIBuffer[i]=ExponentialMA(i,ExtADXPeriod,ExtPDIBuffer[i-1],ExtPDBuffer);
       ExtNDIBuffer[i]=ExponentialMA(i,ExtADXPeriod,ExtNDIBuffer[i-1],ExtNDBuffer);
       //--- fill ADXTmp buffer
-      double tmp=ExtPDIBuffer[i]+ExtNDIBuffer[i];
-      if(tmp!=0.0)
-         tmp=100.0*MathAbs((ExtPDIBuffer[i]-ExtNDIBuffer[i])/tmp);
+      double dTmp=ExtPDIBuffer[i]+ExtNDIBuffer[i];
+      if(dTmp!=0.0)
+         dTmp=100.0*MathAbs((ExtPDIBuffer[i]-ExtNDIBuffer[i])/dTmp);
       else
-         tmp=0.0;
-      ExtTmpBuffer[i]=tmp;
+         dTmp=0.0;
+      ExtTmpBuffer[i]=dTmp;
       //--- fill smoothed ADX buffer
       ExtADXBuffer[i]=ExponentialMA(i,ExtADXPeriod,ExtADXBuffer[i-1],ExtTmpBuffer);
+      
+ExtColorsBuffer[i]=0;
+if(ExtPDIBuffer[i]>ExtNDIBuffer[i]&&ExtADXBuffer[i]>ExtADXBuffer[i-1]){
+ExtColorsBuffer[i]=1;
+}
+if(ExtPDIBuffer[i]>ExtNDIBuffer[i]&&ExtADXBuffer[i]<ExtADXBuffer[i-1]){
+ExtColorsBuffer[i]=2;
+}
+if(ExtPDIBuffer[i]<ExtNDIBuffer[i]&&ExtADXBuffer[i]>ExtADXBuffer[i-1]){
+ExtColorsBuffer[i]=3;
+}
+if(ExtPDIBuffer[i]<ExtNDIBuffer[i]&&ExtADXBuffer[i]<ExtADXBuffer[i-1]){
+ExtColorsBuffer[i]=4;
+}
+      
+      
      }
-//--- OnCalculate done. Return new prev_calculated.
+
+//---- OnCalculate done. Return new prev_calculated.
    return(rates_total);
   }
 //+------------------------------------------------------------------+

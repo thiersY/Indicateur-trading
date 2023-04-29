@@ -10,16 +10,16 @@
 #property indicator_separate_window
 #property indicator_minimum 0
 #property indicator_maximum 100
-//#property indicator_level1 30
-//#property indicator_level2 70
+#property indicator_level1 30
+#property indicator_level2 70
 #property indicator_buffers 3
 #property indicator_plots   1
 #property indicator_type1   DRAW_LINE
 #property indicator_color1  DodgerBlue
 
-//#property indicator_levelcolor Red
-//#property indicator_levelstyle STYLE_SOLID
-//#property indicator_levelwidth 1
+#property indicator_levelcolor Red
+#property indicator_levelstyle STYLE_SOLID
+#property indicator_levelwidth 1
 
 
 //--- input parameters
@@ -53,22 +53,6 @@ void OnInit()
    PlotIndexSetInteger(0,PLOT_DRAW_BEGIN,ExtPeriodRSI);
 //--- name for DataWindow and indicator subwindow label
    IndicatorSetString(INDICATOR_SHORTNAME,"RSI("+string(ExtPeriodRSI)+")");
-   
-IndicatorSetInteger(INDICATOR_LEVELS,2);
-IndicatorSetDouble(INDICATOR_LEVELVALUE,0,30);
-IndicatorSetDouble(INDICATOR_LEVELVALUE,1,70);
-IndicatorSetInteger(INDICATOR_LEVELCOLOR,0,0xff0);
-IndicatorSetInteger(INDICATOR_LEVELCOLOR,1,0xff0);
-IndicatorSetInteger(INDICATOR_LEVELSTYLE,0,STYLE_SOLID);
-IndicatorSetInteger(INDICATOR_LEVELSTYLE,1,STYLE_SOLID);
-IndicatorSetInteger(INDICATOR_LEVELWIDTH,0,1);
-IndicatorSetInteger(INDICATOR_LEVELWIDTH,1,1);
-
-IndicatorSetInteger(INDICATOR_DIGITS,2);
-
-IndicatorSetString(INDICATOR_LEVELTEXT, 0,"Oversold");
-IndicatorSetString(INDICATOR_LEVELTEXT, 1,"Overbought");
-
 //--- initialization done
   }
 //+------------------------------------------------------------------+

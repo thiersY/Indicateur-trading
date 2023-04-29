@@ -1,4 +1,4 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //|                                                         MACD.mq5 |
 //|                   Copyright 2009-2017, MetaQuotes Software Corp. |
 //|                                              http://www.mql5.com |
@@ -13,12 +13,12 @@
 #property indicator_plots   2
 #property indicator_type1   DRAW_HISTOGRAM
 #property indicator_type2   DRAW_LINE
-//#property indicator_color1  Silver
-//#property indicator_color2  Red
+#property indicator_color1  Silver
+#property indicator_color2  Red
 #property indicator_width1  2
 #property indicator_width2  1
-//#property indicator_label1  "MACD"
-//#property indicator_label2  "Signal"
+#property indicator_label1  "MACD"
+#property indicator_label2  "Signal"
 //--- input parameters
 input int                InpFastEMA=12;               // Fast EMA period
 input int                InpSlowEMA=26;               // Slow EMA period
@@ -32,23 +32,11 @@ double                   ExtSlowMaBuffer[];
 //--- MA handles
 int                      ExtFastMaHandle;
 int                      ExtSlowMaHandle;
-//------------------------------------
-input string symbol=" ";  // Symbol
-string name=symbol;
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
 void OnInit()
-  {  
-PlotIndexSetInteger(0,PLOT_COLOR_INDEXES,1);
-PlotIndexSetInteger(0,PLOT_LINE_COLOR,0,Silver);
-PlotIndexSetInteger(1,PLOT_COLOR_INDEXES,1);
-PlotIndexSetInteger(1,PLOT_LINE_COLOR,0,Red);
-
-PlotIndexSetString(0, PLOT_LABEL, "MACD");
-PlotIndexSetString(1, PLOT_LABEL, "Signal");
-
-
+  {
 //--- indicator buffers mapping
    SetIndexBuffer(0,ExtMacdBuffer,INDICATOR_DATA);
    SetIndexBuffer(1,ExtSignalBuffer,INDICATOR_DATA);
@@ -58,21 +46,34 @@ PlotIndexSetString(1, PLOT_LABEL, "Signal");
    PlotIndexSetInteger(1,PLOT_DRAW_BEGIN,InpSignalSMA-1);
 //--- name for Dindicator subwindow label
    IndicatorSetString(INDICATOR_SHORTNAME,"MACD("+string(InpFastEMA)+","+string(InpSlowEMA)+","+string(InpSignalSMA)+")");
-  
 //--- get MA handles
 
-//--- delete the left and right spaces
-   StringTrimRight(name);
-   StringTrimLeft(name);
-//--- if after this the length of the string name is zero
-   if(StringLen(name)==0)
-     {
-      //--- take a symbol from the chart on which the indicator is running
-      name=_Symbol;
-     }  
+// ExtFastMaHandle=iMA(NULL,0,InpFastEMA,0,MODE_EMA,InpAppliedPrice);
+// ExtSlowMaHandle=iMA(NULL,0,InpSlowEMA,0,MODE_EMA,InpAppliedPrice);
+// ExtFastMaHandle=iCustom(NULL,0,"Examples\\Custom Moving Average", InpFastEMA,0,MODE_EMA,InpAppliedPrice);
+// ExtSlowMaHandle=iCustom(NULL,0,"Examples\\Custom Moving Average", InpSlowEMA,0,MODE_EMA,InpAppliedPrice);
 
-ExtFastMaHandle=iMA(name,0,InpFastEMA,0,MODE_EMA,InpAppliedPrice);
-ExtSlowMaHandle=iMA(name,0,InpSlowEMA,0,MODE_EMA,InpAppliedPrice);
+MqlParam params[];
+ ArrayResize(params,5);
+ params[0].type         =TYPE_STRING;
+ params[0].string_value="Examples\\Custom Moving Average";
+//--- set ma_period
+   params[1].type         =TYPE_INT;
+   params[1].integer_value=InpFastEMA;
+//--- set ma_shift
+   params[2].type         =TYPE_INT;
+   params[2].integer_value=0;
+//--- set ma_method
+   params[3].type         =TYPE_INT;
+   params[3].integer_value=MODE_EMA;
+//--- set applied_price
+   params[4].type         =TYPE_INT;
+   params[4].integer_value=InpAppliedPrice;
+
+ExtFastMaHandle=IndicatorCreate(NULL,NULL,IND_CUSTOM,4,params);
+params[1].integer_value=InpSlowEMA;
+ExtSlowMaHandle=IndicatorCreate(NULL,NULL,IND_CUSTOM,4,params);
+
 
 //--- initialization done
   }
